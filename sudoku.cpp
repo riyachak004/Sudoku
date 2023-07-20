@@ -230,27 +230,6 @@ void game::intial() {
     print_grid();
 }
 
-
-//Created backtracking algorithm to solve suduko problems and incorporated a rule-based algorithm and constrain propagtion via forward progation
-//adding in constraint propagtion via forward progation - basically check if the bottom and right have values
-//if there are no values after the three criteria have been satisfied dump the val
-//foward tracking goes to the surrounding cells and deletes the value (placed in the cell) from those cells 
-
-
-//optimiation algorithm - choose the radom state, makes a stochastic move - has an acceptance probability. state gets greedier as times goes on. 
-//generates random state, choose random 2 cells and flip then, then cost funciton determines if this new state was better than the old state (cost function = duplicates in rows and columns). Select a starting temperature/cooling rate. 
-
-
-
-//collaboration easy access for mentorship/ guidancee - culture is really important to me - wolverine has Diversity Employee Resource Groups 
-//value innovation and creavitity and i would like work in a place where new ideas and approaches are valued  
-
-//risk application dev. team (RAD) risk viewing apps/handling actions in the market after trading - Using C# 
-//book  club and women's club 
-
-//node linkedin list 
-//within a week 
-
 //PART B
 
 void game::intial_temp_f(){
