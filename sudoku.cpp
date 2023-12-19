@@ -11,41 +11,33 @@
 
 using namespace std;
 
+// REQUIRES: m (row) and n (col)
+// EFFECTS: checks all permutations of possible values - backtracks if board becomes not promising
+
 void game::genPerms(int m, int n) {
-    int save_val = 0;
-    if (check_complete()) {
+    cout << "row: " << m << " and col: " << n << endl;
+    if (m == SIZE && n == SIZE) {
         print_grid();
-        exit(0);
-    }
-    if (!sudoku[m][n].input) {
-        save_val = sudoku[m][n].val;
-        sudoku[m][n].val = 0;
-    }
-    if (!promising(m, n)) {
         return;
     }
+    
+    if (!promising(m, n)) {return;}
+    
     if (!sudoku[m][n].input) {
         convert_remainder(m, n);
-        if (sudoku[m][n].possible.empty()){
-            sudoku[m][n].val = save_val;
-            return;
-        }
+        
+        if (sudoku[m][n].possible.empty()){return;}
+        
         while (!sudoku[m][n].possible.empty()){
             sudoku[m][n].val = sudoku[m][n].possible.back();
             sudoku[m][n].possible.pop_back();
-          //  print_grid();
             int new_n = (n + 1) % 9;
             int new_m = m;
             if (new_n == 0){
                 new_m = (m + 1) % 9;
             }
-           // if (check_ahead(new_m, new_n) && check_ahead((m + 1) % 9, n)) {
-                genPerms(new_m, new_n);
-         //   }//if
+            genPerms(new_m, new_n);
         }//while
-        if (sudoku[m][n].possible.empty()){
-            sudoku[m][n].val = 0;
-        }
     }// if
     else {
         n = (n + 1) % 9;
@@ -56,20 +48,11 @@ void game::genPerms(int m, int n) {
     }
 } // genPerms()
 
-bool game::check_ahead (int m, int n){
-    if (sudoku[m][n].val != 0){
-        return true;
-    }
-    promising(m, n);
-    convert_remainder(m, n);
-    if (remainder.empty()){
-        return false;
-    }
-    else {
-        return true; 
-    }
-    
-}
+
+// MODIFIES: the sudoku cell's possible values
+// EFFECTS: takes in the values in the row, col, and square and puts it in rem_vec ds
+// uses set difference to find difference between {1,2,3,4,5,6,7,8,9} and rem_vec
+// Values that aren't present in rem_vec are possible values for cell sudouk[m][n]
 
 void game::convert_remainder(int m, int n) {
     sudoku[m][n].possible.clear();
@@ -79,24 +62,20 @@ void game::convert_remainder(int m, int n) {
     rem_vec = {remainder.begin(), remainder.end()};
     sort(rem_vec.begin(), rem_vec.end());
     sudoku[m][n].possible.reserve(original.size());
-    set_difference(original.begin(), original.end(), rem_vec.begin(), rem_vec.end(), inserter(sudoku[m][n].possible, sudoku[m][n].possible.begin()));
+    set_difference(original.begin(), original.end(), rem_vec.begin(), rem_vec.end(),
+                   inserter(sudoku[m][n].possible, sudoku[m][n].possible.begin()));
 }
 
+//REQUIRES: Row and col in bounds
+//EFFECTS: Checks if current state promising
+//RETURNS: False if duplicate values, else true
 
-bool game::check_complete () {
-    for (int m = 8; m >= 0; m--) {
-        for (int n = 8; n >= 0; n--){
-            if (sudoku[n][m].val == 0) {return false;}
-        }
-    }
-    return true;
-}
-
-bool game::promising(int m, int n) {
+bool game::promising(int row, int col) {
     remainder.clear();
-    return check_row(m) && check_col(n) && check_square(m, n);
+    return check_row(row) && check_col(col) && check_square(row, col);
 }
 
+//RETURNS: False if duplicate values in the row, else true
 bool game::check_row(int m){
     unordered_set <int> set;
     for (int n = 0; n < 9; n++){
@@ -109,6 +88,7 @@ bool game::check_row(int m){
     return true;
 }
 
+//RETURNS: False if duplicate values in the col, else true
 bool game::check_col(int n){
     unordered_set <int> set;
     for (int m = 0; m < 9; m++){
@@ -121,6 +101,7 @@ bool game::check_col(int n){
     return true;
 }
 
+//RETURNS: False if duplicate values in the square, else true
 bool game::check_square (int m, int n) {
     unordered_set <int> set;
     int col = (n / 3) * 3;
@@ -137,6 +118,12 @@ bool game::check_square (int m, int n) {
     return true;
 }
 
+// REQUIRES: .txt file, first value is the mode (1,2). Input should be in following format:
+// 2
+// 0 2 4 0 0 7 0 0 0
+// 6 0 0 0 0 0 0 0 0
+// ...
+// EFFECTS: Puzzle solves for the 0 values
 void game::read_input() {
     int value = 0;
     int m = 0;
@@ -154,6 +141,7 @@ void game::read_input() {
     print_grid();
 }//read_input
 
+// EFFECTS: prints out the current grid
 void game::print_grid() {
     cout << "GRID:";
     cout << "\n";
@@ -176,8 +164,47 @@ void game::print_grid() {
         }//if
     }//for
     cout << "\n";
-    
 }
+
+// MODIFIES: Sudoku board by filling in values
+// EFFECTS: checks what are the possible values for a cell (looks at row, col, square), if only 1 possible value
+// fills in the cell with that value
+void game::intial() {
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        for (int m = 0; m <= SIZE; m++){
+            for (int n = 0; n <= SIZE; n++){
+                if (!sudoku[m][n].input) {
+                    promising(m, n);
+                    convert_remainder(m, n);
+                    if (sudoku[m][n].possible.size() == 1){
+                        sudoku[m][n].val = sudoku[m][n].possible[0];
+                        sudoku[m][n].input = true;
+                        changed = true;
+                    }
+                    if (sudoku[m][n].possible.size() == 0){
+                        cout << "ERROR with cell (" << m << "," << n << ")";
+                        exit(1);
+                    }
+                }//if
+            }
+        }
+    }
+    print_grid();
+}
+
+
+//Created backtracking algorithm to solve suduko problems and incorporated a rule-based algorithm and constrain propagtion via forward progation
+//adding in constraint propagtion via forward progation - basically check if the bottom and right have values
+//if there are no values after the three criteria have been satisfied dump the val
+//foward tracking goes to the surrounding cells and deletes the value (placed in the cell) from those cells 
+
+
+//optimiation algorithm - choose the radom state, makes a stochastic move - has an acceptance probability. state gets greedier as times goes on. 
+//generates random state, choose random 2 cells and flip then, then cost funciton determines if this new state was better than the old state (cost function = duplicates in rows and columns). Select a starting temperature/cooling rate.
+
+//PART B
 
 void game::print_grid_final() {
     cout << "GRID:";
@@ -201,57 +228,7 @@ void game::print_grid_final() {
         }//if
     }//for
     cout << "\n";
-    
 }
-
-void game::intial() {
-    int n = 0;
-    int m = 0;
-    int count = 0;
-    int val = 81 - total_inputs;
-    while (count != val) {
-        if (!sudoku[m][n].input) {
-            promising(m, n);
-            convert_remainder(m, n);
-            if (sudoku[m][n].possible.size() == 1){
-                sudoku[m][n].val = sudoku[m][n].possible[0];
-                sudoku[m][n].input = true;
-          //      print_grid();
-            }
-            else {
-                count++;
-            }
-        }//if
-        n = (n + 1) % 9;
-        if (n == 0){
-            m = (m + 1) % 9;
-        }//if
-    }
-    print_grid();
-}
-
-
-//Created backtracking algorithm to solve suduko problems and incorporated a rule-based algorithm and constrain propagtion via forward progation
-//adding in constraint propagtion via forward progation - basically check if the bottom and right have values
-//if there are no values after the three criteria have been satisfied dump the val
-//foward tracking goes to the surrounding cells and deletes the value (placed in the cell) from those cells 
-
-
-//optimiation algorithm - choose the radom state, makes a stochastic move - has an acceptance probability. state gets greedier as times goes on. 
-//generates random state, choose random 2 cells and flip then, then cost funciton determines if this new state was better than the old state (cost function = duplicates in rows and columns). Select a starting temperature/cooling rate. 
-
-
-
-//collaboration easy access for mentorship/ guidancee - culture is really important to me - wolverine has Diversity Employee Resource Groups 
-//value innovation and creavitity and i would like work in a place where new ideas and approaches are valued  
-
-//risk application dev. team (RAD) risk viewing apps/handling actions in the market after trading - Using C# 
-//book  club and women's club 
-
-//node linkedin list 
-//within a week 
-
-//PART B
 
 void game::intial_temp_f(){
     int count = 0;
@@ -528,6 +505,7 @@ void game::check_correct(){
             }
         }
     }
+    cout << "all solved!";
 }
 
 int main(int argc, char * argv[]) {
@@ -543,6 +521,7 @@ int main(int argc, char * argv[]) {
         sudoku.main_loop();
     }
     //rule based algorithm
+    sudoku.check_correct();
     
     
     

@@ -14,7 +14,7 @@
 
 using namespace std;
 
-class game{
+class game {
 private:
     struct cell {
         int val;
@@ -27,6 +27,7 @@ private:
     vector <int> rem_vec;
     vector<int> original = {1,2,3,4,5,6,7,8,9};
     int total_inputs = 0;
+    int SIZE = 8;
     
     //PART B
     int sudoku_starter[9][9];

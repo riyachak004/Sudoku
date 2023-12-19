@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "/Users/riyachakravarty/Desktop/xcode_files/ProjS22/sudoku/sudoku/sudoku"
+      customWorkingDirectory = "/Users/riyachakravarty/Desktop/xcode_files/ProjS22/sudoku2"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
