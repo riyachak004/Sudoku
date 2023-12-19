@@ -230,6 +230,34 @@ void game::print_grid_final() {
     cout << "\n";
 }
 
+void game::intial() {
+    int n = 0;
+    int m = 0;
+    int count = 0;
+    int val = 81 - total_inputs;
+    while (count != val) {
+        if (!sudoku[m][n].input) {
+            promising(m, n);
+            convert_remainder(m, n);
+            if (sudoku[m][n].possible.size() == 1){
+                sudoku[m][n].val = sudoku[m][n].possible[0];
+                sudoku[m][n].input = true;
+          //      print_grid();
+            }
+            else {
+                count++;
+            }
+        }//if
+        n = (n + 1) % 9;
+        if (n == 0){
+            m = (m + 1) % 9;
+        }//if
+    }
+    print_grid();
+}
+
+//PART B
+
 void game::intial_temp_f(){
     int count = 0;
     vector<int> final_costs;
