@@ -12,6 +12,7 @@ Sudoku puzzle solver with two modes.
 6 0 0 0 0 0 0 0 0
 
 ...
+
 where the first value represents the mode and the 0's in the puzzle are values to solve for. 
 
 **Mode 1:** backtracking algorithm 
