@@ -15,9 +15,7 @@ using namespace std;
 // EFFECTS: checks all permutations of possible values - backtracks if board becomes not promising
 
 void game::genPerms(int m, int n) {
-    cout << "row: " << m << " and col: " << n << endl;
     if (m == SIZE && n == SIZE) {
-        print_grid();
         return;
     }
     
@@ -194,177 +192,91 @@ void game::intial() {
     print_grid();
 }
 
-
-//Created backtracking algorithm to solve suduko problems and incorporated a rule-based algorithm and constrain propagtion via forward progation
-//adding in constraint propagtion via forward progation - basically check if the bottom and right have values
-//if there are no values after the three criteria have been satisfied dump the val
-//foward tracking goes to the surrounding cells and deletes the value (placed in the cell) from those cells 
-
-
-//optimiation algorithm - choose the radom state, makes a stochastic move - has an acceptance probability. state gets greedier as times goes on. 
-//generates random state, choose random 2 cells and flip then, then cost funciton determines if this new state was better than the old state (cost function = duplicates in rows and columns). Select a starting temperature/cooling rate.
-
 //PART B
 
-void game::print_grid_final() {
-    cout << "GRID:";
-    cout << "\n";
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++){
-            if (j % 3 == 0 && j != 0) {
-                cout << "|| ";
+//EFFECTS: generates random sudoku board - mode 1 determines values needed in 3x3, mode 2 randomly places them
+void game::create_sudoku(int row, int col, int mode, vector<int>& per_3x3, vector<int>& possible_vals){
+    for (int i = row; i < 3 + row; i++) {
+        for (int j = col; j < 3 + col; j++){
+            if(sudoku[i][j].input && mode == 1){
+                per_3x3[sudoku[i][j].val]++;
             }
-            else if (j != 0){
-                cout << "| ";
-            }
-            else {
-                cout << " ";
-            }
-            cout << sudoku_final[i][j].val << " ";
-        }//for
-        cout << "\n";
-        if (i % 3 == 2 && i != 8){
-            cout << "-------------------------------------\n";
-        }//if
-    }//for
-    cout << "\n";
-}
-
-void game::intial() {
-    int n = 0;
-    int m = 0;
-    int count = 0;
-    int val = 81 - total_inputs;
-    while (count != val) {
-        if (!sudoku[m][n].input) {
-            promising(m, n);
-            convert_remainder(m, n);
-            if (sudoku[m][n].possible.size() == 1){
-                sudoku[m][n].val = sudoku[m][n].possible[0];
-                sudoku[m][n].input = true;
-          //      print_grid();
-            }
-            else {
-                count++;
-            }
-        }//if
-        n = (n + 1) % 9;
-        if (n == 0){
-            m = (m + 1) % 9;
-        }//if
-    }
-    print_grid();
-}
-
-//PART B
-
-void game::intial_temp_f(){
-    int count = 0;
-    vector<int> final_costs;
-    while(count != 200){
-        //creates one example sudoku board
-        for (int row = 0; row < 9; row+=3){
-            for (int col = 0; col < 9; col+=3){
-                //goes through each 3x3 finds what vals are alr inputted and what are left to input (possible_vals)
-                vector<int> per_3x3;
-                for (int i = row; i < 3 + row; i++) {
-                    for (int j = col; j < 3 + col; j++){
-                        if(sudoku[i][j].input){
-                            per_3x3.push_back(sudoku[i][j].val);
-                        }
-                    }
-                }
-                        sort(per_3x3.begin(), per_3x3.end());
-                        vector<int> possible_vals;
-                        possible_vals.reserve(original.size());
-                        set_difference(original.begin(), original.end(), per_3x3.begin(), per_3x3.end(), inserter(possible_vals, possible_vals.begin()));
-                    for (int i = row; i < 3 + row; i++) {
-                        for (int j = col; j < 3 + col; j++){
-                            if(!sudoku[i][j].input){
-                                int index = rand() % possible_vals.size();
-                                sudoku_starter[i][j] = possible_vals[index];
-                                possible_vals.erase(possible_vals.begin() + index);
-                            }
-                            else {
-                                sudoku_starter[i][j] = sudoku[i][j].val;
-                            }
-                        }
-                    }
+            if (!sudoku[i][j].input && mode == 2){
+                int index = rand() % possible_vals.size();
+                sudoku[i][j].val = possible_vals[index];
+                possible_vals.erase(possible_vals.begin() + index);
             }
         }
-        
-        //print_starter_grid();
+    }
+}
+ 
+//REQUIRES: number of iterations, default is 1
+//EFFECTS: creates X number of sudoku boards to get starting temperature or starting board
+void game::intial_temp_f(int iterations){
+    int count = 0;
+    vector<int> final_costs;
+    while(count != iterations){
+        for (int row = 0; row < 9; row+=3){
+            for (int col = 0; col < 9; col+=3){
+                //goes through each 3x3 finds what numbers are alr input and what are left (possible_vals)
+                vector<int> per_3x3(10, 0);
+                vector<int> possible_vals;
+                create_sudoku(row, col, 1, per_3x3, possible_vals); 
+                
+                for (int index = 1; index < 10; index++){
+                    if (per_3x3[index] == 0){
+                        possible_vals.push_back(index); 
+                    }
+                }
+                create_sudoku(row, col, 2, per_3x3, possible_vals); 
+            }
+        }
         int cost = calculate_cost_ss();
         final_costs.push_back(cost);
         count++;
     }
+    //only wanted one board created
+    if (iterations == 1){
+        return;
+    }
+    //after generating 200 boards
     calc_sd(final_costs);
 }
 
+//EFFECTS: calculates the sd of the final costs vector (costs of 200 boards
 void game::calc_sd(vector<int> &final_costs){
     double sum = 0;
-    for (auto vals:final_costs){
+    for (auto &vals:final_costs){
             sum += vals;
         }
 
     double mean = sum/final_costs.size();
     double sum2 = 0;
 
-    for (auto vals:final_costs){
+    for (auto &vals:final_costs){
         sum2 += pow((vals-mean),2);
     }
     
     double sd = sum2/final_costs.size();
     temp = sqrt(sd);
-    //cout << "TEMP: " << temp;
 }
 
+//REQUIRES: sudoku board filled in
+//EFFECTS: calculates the cost (duplicate in rows + cols)  
 int game::calculate_cost_ss(){
     int cost = 0;
     for (int i = 0; i < 9; i++){
-        unordered_set <int> nums;
+        vector<int> nums_row(10,0);
+        vector<int> nums_col(10,0);
         for (int j = 0; j < 9; j++){
-            if (nums.find(sudoku_starter[i][j]) == nums.end()){
-                nums.insert(sudoku_starter[i][j]);
+            if (nums_row[sudoku[i][j].val] == 0){
+                nums_row[sudoku[i][j].val]++;
             }
             else {
                 cost++;
             }
-        }
-    }
-    for (int i = 0; i < 9; i++){
-        unordered_set <int> nums;
-        for (int j = 0; j < 9; j++){
-            if (nums.find(sudoku_starter[j][i]) == nums.end()){
-                nums.insert(sudoku_starter[j][i]);
-            }
-            else {
-                cost++;
-            }
-        }
-    }
-    return cost;
-}
-
-
-int game::calculate_cost_ssfinal(){
-    int cost = 0;
-    for (int i = 0; i < 9; i++){
-        unordered_set <int> nums;
-        for (int j = 0; j < 9; j++){
-            if (nums.find(sudoku[i][j].val) == nums.end()){
-                nums.insert(sudoku[i][j].val);
-            }
-            else {
-                cost++;
-            }
-        }
-    }
-    for (int i = 0; i < 9; i++){
-        unordered_set <int> nums;
-        for (int j = 0; j < 9; j++){
-            if (nums.find(sudoku[j][i].val) == nums.end()){
-                nums.insert(sudoku[j][i].val);
+            if (nums_col[sudoku[j][i].val] == 0){
+                nums_col[sudoku[j][i].val]++;
             }
             else {
                 cost++;
@@ -374,106 +286,73 @@ int game::calculate_cost_ssfinal(){
     return cost;
 }
 
-
-void game::print_starter_grid(){
-    cout << "GRID:";
-    cout << "\n";
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++){
-            if (j % 3 == 0 && j != 0) {
-                cout << "|| ";
-            }
-            else if (j != 0){
-                cout << "| ";
-            }
-            else {
-                cout << " ";
-            }
-            cout << sudoku_starter[i][j] << " ";
-        }//for
-        cout << "\n";
-        if (i % 3 == 2 && i != 8){
-            cout << "-------------------------------------\n";
-        }//if
-    }//for
-    cout << "\n";
-    
-}
-
-
-
-
+//EFFECTS: calculates initial sudoku board, conducts switching, checking cost of current and next sudoku boards, determines if new board should be accepted
 void game::main_loop(){
-    generate_random_final_sudoku();
+    intial_temp_f();
+    print_grid();
     copy_sudoku();
     int current_cost = 0;
-    int prev_cost = calculate_cost_ssfinal();
+    int prev_cost = calculate_cost_ss();
     int stuck_count = 0;
     
-    while (true){
-        int count = 0;
-        while (count < total_inputs){
-            if (prev_cost == 0){
-                print_grid_final();
-               // copy_opposite();
-                return;
-            }
-            switch_vals();
-            current_cost = calculate_cost_ssfinal();
-            double expo = (prev_cost - current_cost)/temp;
-            double P = exp(expo);
-            double R = (float) rand()/RAND_MAX;
+     while (true){
+         int count = 0;
+         while (count < total_inputs){
+             if (prev_cost == 0){
+                 print_grid();
+                 return;
+             }
+             switch_vals();
+             current_cost = calculate_cost_ss();
+             double expo = (prev_cost - current_cost)/temp;
+             double P = exp(expo);
+             double R = (float) rand()/RAND_MAX;
+        
+             if (current_cost < prev_cost) {
+                 stuck_count = 0;
+                 prev_cost = current_cost;
+                 swap(sudoku_final[vec[0].first][vec[0].second].val, sudoku_final[vec[1].first][vec[1].second].val);
+             }
             
+             else {
+                 stuck_count++;
+                 if (P > R){
+                     prev_cost = current_cost;
+                     swap(sudoku_final[vec[0].first][vec[0].second].val, sudoku_final[vec[1].first][vec[1].second].val);
+                 }
+                 else {
+                     swap(sudoku[vec[0].first][vec[0].second].val, sudoku[vec[1].first][vec[1].second].val);
+                 }
+             }
+            
+             if (stuck_count > 160){
+                 temp +=0.001;
+             }
+             count++;
+         }
+         temp *= 0.99;
+         copy_sudoku(1);
+     }
+}
 
-            if (current_cost < prev_cost) {
-                stuck_count = 0;
-                prev_cost = current_cost;
-                swap(sudoku_final[vec[0].first][vec[0].second].val, sudoku_final[vec[1].first][vec[1].second].val);
+//EFFECTS: copies sudoku from next to current, or current to next
+void game::copy_sudoku(int mode) {
+    for(int vals = 0; vals < 9; vals++){
+        for (int other_vals = 0; other_vals < 9; other_vals++){
+            if (mode == 0){
+                sudoku_final[vals][other_vals].val = sudoku[vals][other_vals].val;
+                sudoku_final[vals][other_vals].input = sudoku[vals][other_vals].input;
             }
-            
             else {
-                stuck_count++;
-                if (P > R){
-                    prev_cost = current_cost;
-                    swap(sudoku_final[vec[0].first][vec[0].second].val, sudoku_final[vec[1].first][vec[1].second].val);
-                }
-                else {
-                    swap(sudoku[vec[0].first][vec[0].second].val, sudoku[vec[1].first][vec[1].second].val);
-                }
+                sudoku[vals][other_vals].val = sudoku_final[vals][other_vals].val;
+                sudoku[vals][other_vals].input = sudoku_final[vals][other_vals].input;
             }
-            
-            if (stuck_count > 160){
-                temp +=0.001;
-            }
-            count++;
         }
-        temp *= 0.99;
-      //  cout << "TEMP: " << temp;
-       // cout << "COST: " << prev_cost << "\n";
-        //print_grid_final();
     }
 }
 
-void game::copy_sudoku() {
-    for(int vals = 0; vals < 9; vals++){
-        for (int other_vals = 0; other_vals < 9; other_vals++){
-            sudoku_final[vals][other_vals].val = sudoku[vals][other_vals].val;
-            sudoku_final[vals][other_vals].input = sudoku[vals][other_vals].input;
-        }
-    }
-   // print_grid_final();
-}
-
-void game::copy_opposite() {
-    for(int vals = 0; vals < 9; vals++){
-        for (int other_vals = 0; other_vals < 9; other_vals++){
-            sudoku[vals][other_vals].val = sudoku_final[vals][other_vals].val;
-            sudoku[vals][other_vals].input = sudoku_final[vals][other_vals].input;
-        }
-    }
-    print_grid_final();
-}
-
+//MODIFIES: sudoku grid
+//EFFECTS: swaps the values of two randomly chosen cells in the same 3x3 grid
 void game::switch_vals(){
     vec.clear();
     while(vec.size() != 2){
@@ -493,38 +372,7 @@ void game::switch_vals(){
     swap(sudoku[vec[0].first][vec[0].second].val, sudoku[vec[1].first][vec[1].second].val);
 }
 
-void game::generate_random_final_sudoku(){
-    vector<int> final_costs;
-        //creates one example sudoku board
-        for (int row = 0; row < 9; row+=3){
-            for (int col = 0; col < 9; col+=3){
-                //goes through each 3x3 finds what vals are alr inputted and what are left to input (possible_vals)
-                vector<int> per_3x3;
-                for (int i = row; i < 3 + row; i++) {
-                    for (int j = col; j < 3 + col; j++){
-                        if(sudoku[i][j].input){
-                            per_3x3.push_back(sudoku[i][j].val);
-                        }
-                    }
-                }
-                        sort(per_3x3.begin(), per_3x3.end());
-                        vector<int> possible_vals;
-                        possible_vals.reserve(original.size());
-                        set_difference(original.begin(), original.end(), per_3x3.begin(), per_3x3.end(), inserter(possible_vals, possible_vals.begin()));
-                    for (int i = row; i < 3 + row; i++) {
-                        for (int j = col; j < 3 + col; j++){
-                            if(!sudoku[i][j].input){
-                                int index = rand() % possible_vals.size();
-                                sudoku[i][j].val = possible_vals[index];
-                                possible_vals.erase(possible_vals.begin() + index);
-                            }
-                        }
-                    }
-            }
-        }
-    //print_grid();
-}
-
+//EFFECTS: checks if sudoku board is correctly solved
 void game::check_correct(){
     for (int i = 0; i < 9; i++){
         for (int j = 0; j < 9; j++){
@@ -538,19 +386,16 @@ void game::check_correct(){
 
 int main(int argc, char * argv[]) {
     game sudoku;
-    xcode_redirect(argc, argv);
+     xcode_redirect(argc, argv);
     sudoku.read_input();
     if (sudoku.mode == 1){
         sudoku.intial();
         sudoku.genPerms(0,0);
     }
     else {
-        sudoku.intial_temp_f();
+        sudoku.intial_temp_f(200);
         sudoku.main_loop();
     }
     //rule based algorithm
     sudoku.check_correct();
-    
-    
-    
 }

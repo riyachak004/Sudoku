@@ -65,7 +65,7 @@ public:
     void print_starter_grid();
     
     //calculates the intial temperature
-    void intial_temp_f();
+    void intial_temp_f(int iterations = 1);
     
     //calculates cost of starter sudoku
     int calculate_cost_ss();
@@ -77,8 +77,8 @@ public:
     void generate_random_final_sudoku();
     
     int calculate_cost_ssfinal();
-    
-    void copy_sudoku();
+
+    void copy_sudoku(int mode = 0);
     
     void switch_vals();
     
@@ -87,6 +87,8 @@ public:
     void copy_opposite();
     
     void check_correct();
+
+    void create_sudoku(int row, int col, int mode, vector<int>& per_3x3, vector<int>& possible_vals);
     
 };
 
