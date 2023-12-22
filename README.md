@@ -3,6 +3,7 @@
 Sudoku puzzle solver with two modes.
 
 **Input:**  This algorithm reads input from a file formatted as such 
+
 2
 
 0 2 4 0 0 7 0 0 0
